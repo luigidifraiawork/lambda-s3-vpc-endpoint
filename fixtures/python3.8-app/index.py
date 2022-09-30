@@ -1,6 +1,14 @@
+import logging
 import boto3
 import os
 from uuid import uuid4
+
+# See https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+logging.getLogger('boto3').setLevel(logging.DEBUG)
+logging.getLogger('botocore').setLevel(logging.DEBUG)
 
 bucketName = os.environ['BUCKET_NAME']
 regionName = os.environ['REGION_NAME']
@@ -12,4 +20,4 @@ def lambda_handler(event, context):
        Key=str(uuid4()),
        Body=bytearray("Hello World", 'utf-8')
     )
-    print(resp)
+    logger.info(resp)
