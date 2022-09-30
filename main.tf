@@ -94,7 +94,7 @@ module "kms" {
     lambda = {
       grantee_principal = module.iam_role_lambda.iam_role_arn
       operations = [
-        "Encrypt", "Decrypt", "GenerateDataKey"
+        "GenerateDataKey"
       ]
     }
   }
