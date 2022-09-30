@@ -31,4 +31,3 @@ repos:
         - '--args=--only=terraform_workspace_remote'
         - '--args=--only=terraform_unused_required_providers'
         - '--args=--only=terraform_module_version'
-
