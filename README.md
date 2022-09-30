@@ -1,7 +1,10 @@
 # lambda-s3-vpc-endpoint
-Creates a VPC with S3 endpoint, showing that a Lambda function in such VPC can reach S3 without Internet access.
 
-Based on a CloudFormation [project](https://github.com/gford1000-aws/lambda_s3_access_using_vpc_endpoint) published in GitHub.
+The material provided in this repository creates a VPC with an S3 Gateway Endpoint, showing that a Lambda function in such VPC can write objects to an S3 bucket without Internet access.
+
+Such material avoids using atomic resources defined in the AWS provider. Instead, it uses *exclusively* AWS modules and submodules managed by [Anton Babenko](https://registry.terraform.io/namespaces/antonbabenko) on the Hashicorp Terraform Registry.
+
+Based on a [CloudFormation project](https://github.com/gford1000-aws/lambda_s3_access_using_vpc_endpoint) published in GitHub.
 
 ## Deployment
 
