@@ -179,7 +179,8 @@ module "iam_role_lambda" {
   role_name         = random_pet.this.id
 
   custom_role_policy_arns = [
-    module.iam_policy_lambda.arn
+    module.iam_policy_lambda.arn,
+    data.aws_iam_policy.lambda_vpc.arn
   ]
 }
 
@@ -196,17 +197,6 @@ module "iam_policy_lambda" {
 data "aws_iam_policy_document" "lambda" {
   statement {
     actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-
-    resources = [
-      "arn:aws:logs:*:*:*",
-    ]
-  }
-  statement {
-    actions = [
       "s3:PutObject",
     ]
 
@@ -214,16 +204,9 @@ data "aws_iam_policy_document" "lambda" {
       "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
     ]
   }
+}
 
-  statement {
-    actions = [
-      "ec2:CreateNetworkInterface",
-      "ec2:DescribeNetworkInterfaces",
-      "ec2:DeleteNetworkInterface",
-    ]
-
-    resources = [
-      "*",
-    ]
-  }
+# https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/resources/iam_policy
+data "aws_iam_policy" "lambda_vpc" {
+  name = "AWSLambdaVPCAccessExecutionRole"
 }
