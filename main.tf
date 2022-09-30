@@ -95,7 +95,7 @@ module "kms" {
     lambda = {
       grantee_principal = module.iam_role_lambda.iam_role_arn
       operations = [
-        "GenerateDataKey"
+        "GenerateDataKey",
       ]
     }
   }
@@ -171,7 +171,7 @@ module "iam_role_lambda" {
   version = "5.5.0"
 
   trusted_role_services = [
-    "lambda.amazonaws.com"
+    "lambda.amazonaws.com",
   ]
 
   create_role       = true
@@ -180,7 +180,7 @@ module "iam_role_lambda" {
 
   custom_role_policy_arns = [
     module.iam_policy_lambda.arn,
-    data.aws_iam_policy.lambda_vpc.arn
+    data.aws_iam_policy.lambda_vpc.arn,
   ]
 }
 
