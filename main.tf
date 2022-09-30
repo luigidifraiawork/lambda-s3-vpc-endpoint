@@ -79,6 +79,22 @@ data "aws_iam_policy_document" "endpoint" {
   }
 }
 
+# https://registry.terraform.io/modules/terraform-aws-modules/kms/aws/1.1.0
+module "kms" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "1.1.0"
+
+  # Grants
+  grants = {
+    lambda = {
+      grantee_principal = module.iam_role_lambda.iam_role_arn
+      operations        = [
+        "Encrypt", "Decrypt", "GenerateDataKey"
+      ]
+    }
+  }
+}
+
 # https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/3.4.0
 module "s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
@@ -91,6 +107,15 @@ module "s3_bucket" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        kms_master_key_id = module.kms.key_id
+        sse_algorithm     = "aws:kms"
+      }
+    }
+  }
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/lambda/aws/4.0.2
