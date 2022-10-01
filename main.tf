@@ -82,7 +82,7 @@ data "aws_iam_policy_document" "endpoint" {
     ]
 
     resources = [
-      "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
+      "${module.s3_bucket.s3_bucket_arn}/*",
     ]
   }
 }
@@ -144,11 +144,11 @@ data "aws_iam_policy_document" "bucket" {
     }
 
     actions = [
-      "s3:ListBucket",
+      "s3:PutObject",
     ]
 
     resources = [
-      module.s3_bucket.s3_bucket_arn,
+      "${module.s3_bucket.s3_bucket_arn}/*",
     ]
   }
 }
@@ -175,8 +175,6 @@ module "lambda_s3_write" {
   create_role                   = true
   attach_cloudwatch_logs_policy = true
   attach_network_policy         = true
-  attach_policy                 = true
-  policy                        = module.iam_policy_lambda.arn
 
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -196,28 +194,4 @@ module "security_group_lambda" {
   egress_prefix_list_ids = [module.vpc_endpoints.endpoints["s3"]["prefix_list_id"]]
 
   egress_rules = ["all-all"]
-}
-
-# https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/5.5.0/submodules/iam-policy
-module "iam_policy_lambda" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.5.0"
-
-  name        = random_pet.this.id
-  description = "Additional policy for Lambda"
-
-  policy = data.aws_iam_policy_document.lambda.json
-}
-
-# https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/data-sources/iam_policy_document
-data "aws_iam_policy_document" "lambda" {
-  statement {
-    actions = [
-      "s3:PutObject",
-    ]
-
-    resources = [
-      "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
-    ]
-  }
 }
