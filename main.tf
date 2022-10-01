@@ -7,20 +7,6 @@ locals {
   )
 }
 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.33.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.4.3"
-    }
-  }
-  required_version = ">= 1.0"
-}
-
 provider "aws" {
   region = var.region
 
@@ -36,6 +22,10 @@ provider "aws" {
   }
 }
 
+################################################################################
+# Supporting Resources
+################################################################################
+
 resource "random_pet" "this" {
   length = 2
 }
@@ -43,7 +33,7 @@ resource "random_pet" "this" {
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.16.0"
+  version = "~> 3.0"
 
   name = random_pet.this.id
   cidr = "10.0.0.0/16"
@@ -55,7 +45,7 @@ module "vpc" {
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints
 module "vpc_endpoints" {
   source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
-  version = "3.16.0"
+  version = "~> 3.0"
 
   vpc_id = module.vpc.vpc_id
 
@@ -99,7 +89,7 @@ data "aws_iam_policy_document" "endpoint" {
 # https://registry.terraform.io/modules/terraform-aws-modules/kms/aws/1.1.0
 module "kms" {
   source  = "terraform-aws-modules/kms/aws"
-  version = "1.1.0"
+  version = "~> 1.0"
 
   description = "S3 encryption key"
 
@@ -117,7 +107,7 @@ module "kms" {
 # https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/3.4.0
 module "s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "3.4.0"
+  version = "~> 3.0"
 
   bucket_prefix = "${random_pet.this.id}-"
   force_destroy = true
@@ -166,10 +156,14 @@ data "aws_iam_policy_document" "bucket" {
   }
 }
 
+################################################################################
+# Lambda Module
+################################################################################
+
 # https://registry.terraform.io/modules/terraform-aws-modules/lambda/aws/4.0.2
 module "lambda_s3_write" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "4.0.2"
+  version = "~> 4.0"
 
   description = "Lambda demonstrating writes to an S3 bucket from within a VPC without Internet access"
 
@@ -199,7 +193,7 @@ module "lambda_s3_write" {
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1
 module "security_group_lambda" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "4.13.1"
+  version = "~> 4.0"
 
   name        = random_pet.this.id
   description = "Security Group for Lambda Egress"
