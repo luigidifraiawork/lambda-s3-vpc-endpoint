@@ -1,8 +1,10 @@
 locals {
-  tags = {
-    Terraform   = "true"
-    Environment = "sandbox"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Terraform = "true"
+    }
+  )
 }
 
 terraform {
