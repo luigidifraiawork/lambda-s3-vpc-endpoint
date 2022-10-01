@@ -82,7 +82,7 @@ data "aws_iam_policy_document" "endpoint" {
     ]
 
     resources = [
-      "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
+      "${module.s3_bucket.s3_bucket_arn}/*",
     ]
   }
 }
