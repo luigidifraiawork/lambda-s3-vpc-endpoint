@@ -64,27 +64,27 @@ terraform apply -auto-approve
 
 | Name | Version |
 |------|---------|
-| terraform | >= 1.0 |
-| aws | >= 4.33.0 |
-| random | >= 3.4.3 |
+| terraform | >= 0.14 |
+| aws | >= 4.33 |
+| random | >= 3.4 |
 
 ## Providers
 
-| Name | Version |
-|------|---------|
+| Name | Version   |
+|------|-----------|
 | aws | >= 4.33.0 |
-| random | >= 3.4.3 |
+| random | >= 3.4.3  |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| kms | terraform-aws-modules/kms/aws | 1.1.0 |
-| lambda_s3_write | terraform-aws-modules/lambda/aws | 4.0.2 |
-| s3_bucket | terraform-aws-modules/s3-bucket/aws | 3.4.0 |
-| security_group_lambda | terraform-aws-modules/security-group/aws | 4.13.1 |
-| vpc | terraform-aws-modules/vpc/aws | 3.16.0 |
-| vpc_endpoints | terraform-aws-modules/vpc/aws//modules/vpc-endpoints | 3.16.0 |
+| kms | terraform-aws-modules/kms/aws | ~> 1.0 |
+| lambda_s3_write | terraform-aws-modules/lambda/aws | ~> 4.0 |
+| s3_bucket | terraform-aws-modules/s3-bucket/aws | ~> 3.0 |
+| security_group_lambda | terraform-aws-modules/security-group/aws | ~> 4.0 |
+| vpc | terraform-aws-modules/vpc/aws | ~> 3.0 |
+| vpc_endpoints | terraform-aws-modules/vpc/aws//modules/vpc-endpoints | ~> 3.0 |
 
 ## Resources
 
