@@ -18,6 +18,6 @@ def lambda_handler(event, context):
     resp = client.put_object(
        Bucket=bucketName,
        Key=str(uuid4()),
-       Body=bytearray("Hello World", 'utf-8')
+       Body=bytearray("Hello, World!", 'utf-8')
     )
     logger.info(resp)
