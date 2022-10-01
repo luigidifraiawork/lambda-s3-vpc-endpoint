@@ -190,6 +190,9 @@ module "security_group_lambda" {
 
   vpc_id = module.vpc.vpc_id
 
+  egress_cidr_blocks      = []
+  egress_ipv6_cidr_blocks = []
+
   # Prefix list ids to use in all egress rules in this module
   egress_prefix_list_ids = [module.vpc_endpoints.endpoints["s3"]["prefix_list_id"]]
 
