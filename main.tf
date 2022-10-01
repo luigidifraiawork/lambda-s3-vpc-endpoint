@@ -70,6 +70,11 @@ module "vpc_endpoints" {
 # https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/data-sources/iam_policy_document
 data "aws_iam_policy_document" "endpoint" {
   statement {
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
     actions = [
       "s3:PutObject",
     ]
@@ -77,11 +82,6 @@ data "aws_iam_policy_document" "endpoint" {
     resources = [
       "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
     ]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
   }
 }
 
@@ -119,6 +119,10 @@ module "s3_bucket" {
     enabled = true
   }
 
+  # Bucket policy
+  attach_policy = true
+  policy        = data.aws_iam_policy_document.bucket.json
+
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
@@ -126,6 +130,23 @@ module "s3_bucket" {
         sse_algorithm     = "aws:kms"
       }
     }
+  }
+}
+
+data "aws_iam_policy_document" "bucket" {
+  statement {
+    principals {
+      type        = "AWS"
+      identifiers = [module.lambda_s3_write.lambda_role_arn]
+    }
+
+    actions = [
+      "s3:ListBucket",
+    ]
+
+    resources = [
+      module.s3_bucket.s3_bucket_arn,
+    ]
   }
 }
 
@@ -139,7 +160,6 @@ module "lambda_s3_write" {
   function_name = random_pet.this.id
   handler       = "index.lambda_handler"
   runtime       = "python3.8"
-  tracing_mode  = "PassThrough"
 
   source_path = "${path.module}/fixtures/python3.8-app"
 
