@@ -29,19 +29,14 @@ The output should look as per below:
 }
 ```
 
-Retrieve the prefix list ID for S3 in the region:
-```commandline
-aws ec2 describe-prefix-lists
-```
-
-Ensure that you pass the value to Terraform:
-```commandline
-export TF_VAR_s3_prefix_list_id=<prefix list ID>
-```
-
 Deploy with:
 ```commandline
 terraform init
 terraform plan
 terraform apply -auto-approve
+```
+
+Destroy with:
+```commandline
+terraform destroy -auto-approve
 ```
