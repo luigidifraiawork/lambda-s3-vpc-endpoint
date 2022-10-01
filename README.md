@@ -41,6 +41,24 @@ Destroy with:
 terraform destroy -auto-approve
 ```
 
+## Known issues
+The first deployment attempt will fail with:
+```commandline
+╷
+│ Error: Provider produced inconsistent final plan
+│
+│ When expanding the plan for module.vpc.aws_vpc.this[0] to include new values learned so far during apply, provider "registry.terraform.io/hashicorp/aws" produced an invalid new value for .tags_all:
+│ new element "Name" has appeared.
+│
+│ This is a bug in the provider, which should be reported in the provider's own issue tracker.
+╵
+```
+
+Unfortunately, there is no workaround available at the moment, so just issue the apply command again:
+```commandline
+terraform apply -auto-approve
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
