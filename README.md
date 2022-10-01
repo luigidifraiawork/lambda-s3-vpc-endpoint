@@ -42,7 +42,6 @@ terraform destroy -auto-approve
 ```
 
 <!-- BEGIN_TF_DOCS -->
-
 ## Requirements
 
 | Name | Version |
@@ -55,8 +54,8 @@ terraform destroy -auto-approve
 
 | Name | Version |
 |------|---------|
-| aws | 4.33.0 |
-| random | 3.4.3 |
+| aws | >= 4.33.0 |
+| random | >= 3.4.3 |
 
 ## Modules
 
@@ -87,5 +86,4 @@ terraform destroy -auto-approve
 ## Outputs
 
 No outputs.
-
 <!-- END_TF_DOCS -->
