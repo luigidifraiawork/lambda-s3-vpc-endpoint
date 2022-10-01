@@ -135,6 +135,7 @@ module "s3_bucket" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/data-sources/iam_policy_document
 data "aws_iam_policy_document" "bucket" {
   statement {
     principals {
