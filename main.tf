@@ -171,7 +171,7 @@ module "lambda_s3_write" {
     REGION_NAME = var.region
   }
 
-  # Let the module create a role for us; we just attach an extra policy to it for S3 writes
+  # Let the module create a role for us; we don't attach any extra policy for S3 writes as that's allowed by the bucket policy
   create_role                   = true
   attach_cloudwatch_logs_policy = true
   attach_network_policy         = true
