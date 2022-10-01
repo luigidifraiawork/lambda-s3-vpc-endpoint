@@ -72,6 +72,8 @@ module "vpc_endpoints" {
 # https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/data-sources/iam_policy_document
 data "aws_iam_policy_document" "endpoint" {
   statement {
+    sid = "RestrictBucketAccessToIAMRole"
+
     principals {
       type        = "AWS"
       identifiers = ["*"]
@@ -84,6 +86,13 @@ data "aws_iam_policy_document" "endpoint" {
     resources = [
       "${module.s3_bucket.s3_bucket_arn}/*",
     ]
+
+    # See https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html#edit-vpc-endpoint-policy-s3
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:PrincipalArn"
+      values   = [module.lambda_s3_write.lambda_role_arn]
+    }
   }
 }
 
@@ -138,6 +147,8 @@ module "s3_bucket" {
 # https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/data-sources/iam_policy_document
 data "aws_iam_policy_document" "bucket" {
   statement {
+    sid = "RestrictBucketAccessToIAMRole"
+
     principals {
       type        = "AWS"
       identifiers = [module.lambda_s3_write.lambda_role_arn]
