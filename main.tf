@@ -93,7 +93,7 @@ module "kms" {
   # Grants
   grants = {
     lambda = {
-      grantee_principal = module.iam_role_lambda.iam_role_arn
+      grantee_principal = module.lambda_s3_write.lambda_role_arn
       operations = [
         "GenerateDataKey",
       ]
@@ -106,6 +106,7 @@ module "s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "3.4.0"
 
+  bucket_prefix = "${random_pet.this.id}-"
   force_destroy = true
 
   # S3 bucket-level Public Access Block configuration
@@ -113,6 +114,10 @@ module "s3_bucket" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+
+  versioning = {
+    enabled = true
+  }
 
   server_side_encryption_configuration = {
     rule = {
@@ -129,13 +134,12 @@ module "lambda_s3_write" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "4.0.2"
 
+  description = "Lambda demonstrating writes to an S3 bucket from within a VPC without Internet access"
+
   function_name = random_pet.this.id
-  description   = "Lambda demonstrating writes to an S3 bucket from a VPC without Internet access"
   handler       = "index.lambda_handler"
   runtime       = "python3.8"
-
-  create_role = false
-  lambda_role = module.iam_role_lambda.iam_role_arn
+  tracing_mode  = "PassThrough"
 
   source_path = "${path.module}/fixtures/python3.8-app"
 
@@ -144,10 +148,15 @@ module "lambda_s3_write" {
     REGION_NAME = var.region
   }
 
+  # Let the module create a role for us; we just attach an extra policy to it for S3 writes
+  create_role                   = true
+  attach_cloudwatch_logs_policy = true
+  attach_network_policy         = true
+  attach_policy                 = true
+  policy                        = module.iam_policy_lambda.arn
+
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
   vpc_subnet_ids         = module.vpc.private_subnets
-
-  attach_network_policy = true
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1
@@ -157,7 +166,8 @@ module "security_group_lambda" {
 
   name        = random_pet.this.id
   description = "Security Group for Lambda Egress"
-  vpc_id      = module.vpc.vpc_id
+
+  vpc_id = module.vpc.vpc_id
 
   # Prefix list ids to use in all egress rules in this module
   egress_prefix_list_ids = [var.s3_prefix_list_id]
@@ -165,31 +175,14 @@ module "security_group_lambda" {
   egress_rules = ["all-all"]
 }
 
-# https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/5.5.0/submodules/iam-assumable-role
-module "iam_role_lambda" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = "5.5.0"
-
-  trusted_role_services = [
-    "lambda.amazonaws.com",
-  ]
-
-  create_role       = true
-  role_requires_mfa = false
-  role_name         = random_pet.this.id
-
-  custom_role_policy_arns = [
-    module.iam_policy_lambda.arn,
-    data.aws_iam_policy.lambda_vpc.arn,
-  ]
-}
-
 # https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/5.5.0/submodules/iam-policy
 module "iam_policy_lambda" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
   version = "5.5.0"
 
-  name   = random_pet.this.id
+  name        = random_pet.this.id
+  description = "Additional policy for Lambda"
+
   policy = data.aws_iam_policy_document.lambda.json
 }
 
@@ -204,9 +197,4 @@ data "aws_iam_policy_document" "lambda" {
       "arn:aws:s3:::${module.s3_bucket.s3_bucket_id}/*",
     ]
   }
-}
-
-# https://registry.terraform.io/providers/hashicorp/aws/4.33.0/docs/resources/iam_policy
-data "aws_iam_policy" "lambda_vpc" {
-  name = "AWSLambdaVPCAccessExecutionRole"
 }
