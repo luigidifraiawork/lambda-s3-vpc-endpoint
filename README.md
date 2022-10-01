@@ -42,7 +42,6 @@ terraform destroy -auto-approve
 ```
 
 <!-- BEGIN_TF_DOCS -->
-
 ## Requirements
 
 | Name | Version |
@@ -55,14 +54,13 @@ terraform destroy -auto-approve
 
 | Name | Version |
 |------|---------|
-| aws | 4.33.0 |
-| random | 3.4.3 |
+| aws | >= 4.33.0 |
+| random | >= 3.4.3 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| iam_policy_lambda | terraform-aws-modules/iam/aws//modules/iam-policy | 5.5.0 |
 | kms | terraform-aws-modules/kms/aws | 1.1.0 |
 | lambda_s3_write | terraform-aws-modules/lambda/aws | 4.0.2 |
 | s3_bucket | terraform-aws-modules/s3-bucket/aws | 3.4.0 |
@@ -77,7 +75,6 @@ terraform destroy -auto-approve
 | [random_pet.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/pet) | resource |
 | [aws_iam_policy_document.bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.endpoint](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
-| [aws_iam_policy_document.lambda](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 
 ## Inputs
 
@@ -89,5 +86,4 @@ terraform destroy -auto-approve
 ## Outputs
 
 No outputs.
-
 <!-- END_TF_DOCS -->
