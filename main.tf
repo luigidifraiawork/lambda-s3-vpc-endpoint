@@ -101,6 +101,8 @@ module "kms" {
   source  = "terraform-aws-modules/kms/aws"
   version = "1.1.0"
 
+  description = "S3 encryption key"
+
   # Grants
   grants = {
     lambda = {
