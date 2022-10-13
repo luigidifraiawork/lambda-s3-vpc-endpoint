@@ -74,10 +74,10 @@ terraform apply -auto-approve
 
 ## Providers
 
-| Name | Version   |
-|------|-----------|
-| aws | >= 4.33.0 |
-| random | >= 3.4.3  |
+| Name | Version |
+|------|---------|
+| aws | 4.33.0 |
+| random | 3.4.3 |
 
 ## Modules
 
@@ -95,6 +95,7 @@ terraform apply -auto-approve
 | Name | Type |
 |------|------|
 | [random_pet.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/pet) | resource |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 | [aws_iam_policy_document.bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.endpoint](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 
@@ -102,8 +103,10 @@ terraform apply -auto-approve
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| az_count | Number of availability zones to create VPC subnets in | `number` | `3` | no |
 | region | Name of the region to deploy to | `string` | `"us-east-1"` | no |
 | tags | Default tags to apply to all resources | `map(string)` | <pre>{<br>  "Environment": "sandbox"<br>}</pre> | no |
+| vpc_cidr | CIDR Block to allocate to the VPC | `string` | `"10.0.0.0/16"` | no |
 
 ## Outputs
 
