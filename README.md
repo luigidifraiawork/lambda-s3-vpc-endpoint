@@ -12,6 +12,10 @@ Set up authentication details to your Sandbox (e.g. *A Cloud Guru*) with:
 ```commandline
 export AWS_ACCESS_KEY_ID=AKIAZR3FF5EXAMPLEID
 export AWS_SECRET_ACCESS_KEY=k9eabHZx0Kq0utFZ2u20Ymo1I7zaWEXAMPLEKEY
+```
+
+Set the default region with:
+```commandline
 export AWS_DEFAULT_REGION=us-east-1
 ```
 
