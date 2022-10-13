@@ -22,6 +22,12 @@ provider "aws" {
   }
 }
 
+data "aws_availability_zones" "available" {}
+
+locals {
+  azs = slice(sort(data.aws_availability_zones.available.names), 0, var.az_count)
+}
+
 ################################################################################
 # Supporting Resources
 ################################################################################
@@ -36,10 +42,10 @@ module "vpc" {
   version = "~> 3.0"
 
   name = random_pet.this.id
-  cidr = "10.0.0.0/16"
+  cidr = var.vpc_cidr
 
-  azs             = ["${var.region}a", "${var.region}b", "${var.region}c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  azs             = local.azs
+  private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints

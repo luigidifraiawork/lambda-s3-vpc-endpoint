@@ -1,7 +1,31 @@
+variable "vpc_cidr" {
+  description = "CIDR Block to allocate to the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+  validation {
+    condition     = can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))?$", var.vpc_cidr))
+    error_message = "The value of variable 'vpc_cidr' must be a valid network CIDR: a.b.c.d/m."
+  }
+}
+
 variable "region" {
   description = "Name of the region to deploy to"
   type        = string
   default     = "us-east-1"
+  validation {
+    condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d", var.region))
+    error_message = "The value of variable 'region' is not valid."
+  }
+}
+
+variable "az_count" {
+  description = "Number of availability zones to create VPC subnets in"
+  type        = number
+  default     = 3
+  validation {
+    condition     = var.az_count >= 3 && var.az_count <= 6
+    error_message = "The value of variable 'az_count' must be between 2 and 6."
+  }
 }
 
 variable "tags" {
