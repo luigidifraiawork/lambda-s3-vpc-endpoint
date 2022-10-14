@@ -4,7 +4,7 @@ The material provided in this repository creates a VPC with an S3 Gateway Endpoi
 
 The material *explicitly* avoids using atomic resources defined in the AWS provider, with the exception of data sources. Instead, it uses *exclusively* AWS modules and submodules managed by [Anton Babenko](https://registry.terraform.io/namespaces/antonbabenko) in the Hashicorp Terraform Registry.
 
-Based on a [CloudFormation project](https://github.com/gford1000-aws/lambda_s3_access_using_vpc_endpoint) published in GitHub, updated and rationalised.
+Based on an existing [CloudFormation project](https://github.com/gford1000-aws/lambda_s3_access_using_vpc_endpoint), updated and rationalised. This work also became an [example for the AWS Lambda Terraform module](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/with-vpc-s3-endpoint) managed by Anton Babenko.
 
 ## Deployment
 
