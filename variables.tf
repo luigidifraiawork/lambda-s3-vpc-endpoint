@@ -1,7 +1,7 @@
 variable "region" {
   description = "Name of the region to deploy to"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-2"
   validation {
     condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d", var.region))
     error_message = "The value of variable 'region' is not valid."
@@ -9,9 +9,9 @@ variable "region" {
 }
 
 variable "vpc_cidr" {
-  description = "CIDR Block to allocate to the VPC"
+  description = "CIDR Block to allocate to the VPCs"
   type        = string
-  default     = "10.0.0.0/16"
+  default     = "10.0.0.0/8"
   validation {
     condition     = can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))?$", var.vpc_cidr))
     error_message = "The value of variable 'vpc_cidr' must be a valid network CIDR: a.b.c.d/m."

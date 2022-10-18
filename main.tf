@@ -5,6 +5,9 @@ locals {
       Terraform = "true"
     }
   )
+  spoke1_vpc_cidr = cidrsubnet(var.vpc_cidr, 8, 0)
+  spoke2_vpc_cidr = cidrsubnet(var.vpc_cidr, 8, 1)
+  ss_vpc_cidr     = cidrsubnet(var.vpc_cidr, 8, 50)
 }
 
 provider "aws" {
@@ -37,29 +40,29 @@ resource "random_pet" "this" {
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
-module "vpc" {
+module "ss_vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 3.0"
 
-  name = random_pet.this.id
-  cidr = var.vpc_cidr
+  name = "${random_pet.this.id}-ss"
+  cidr = local.ss_vpc_cidr
 
   azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.ss_vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints
-module "vpc_endpoints" {
+module "ss_vpc_endpoints" {
   source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
   version = "~> 3.0"
 
-  vpc_id = module.vpc.vpc_id
+  vpc_id = module.ss_vpc.vpc_id
 
   endpoints = {
     s3 = {
       service         = "s3"
       service_type    = "Gateway"
-      route_table_ids = module.vpc.private_route_table_ids
+      route_table_ids = module.ss_vpc.private_route_table_ids
       policy          = data.aws_iam_policy_document.endpoint.json
     }
   }
@@ -162,6 +165,128 @@ data "aws_iam_policy_document" "bucket" {
   }
 }
 
+# https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
+module "spoke1_vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 3.0"
+
+  name = "${random_pet.this.id}-spoke1"
+  cidr = local.spoke1_vpc_cidr
+
+  azs             = local.azs
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.spoke1_vpc_cidr, 8, k)]
+}
+
+# https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
+module "spoke2_vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 3.0"
+
+  name = "${random_pet.this.id}-spoke2"
+  cidr = local.spoke2_vpc_cidr
+
+  azs             = local.azs
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.spoke2_vpc_cidr, 8, k)]
+}
+
+# https://registry.terraform.io/modules/terraform-aws-modules/transit-gateway/aws/2.8.0
+module "tgw" {
+  source  = "terraform-aws-modules/transit-gateway/aws"
+  version = "~> 2.8"
+
+  name = random_pet.this.id
+
+  enable_auto_accept_shared_attachments  = true
+  enable_default_route_table_association = false
+  enable_default_route_table_propagation = false
+}
+
+resource "aws_route" "ss_default" {
+  count                  = var.az_count
+  route_table_id         = module.ss_vpc.private_route_table_ids[count.index]
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_route" "spoke1_default" {
+  count                  = var.az_count
+  route_table_id         = module.spoke1_vpc.private_route_table_ids[count.index]
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_route" "spoke2_default" {
+  count                  = var.az_count
+  route_table_id         = module.spoke2_vpc.private_route_table_ids[count.index]
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_ec2_transit_gateway_route_table" "ss" {
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_ec2_transit_gateway_route_table" "spoke1" {
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_ec2_transit_gateway_route_table" "spoke2" {
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "ss" {
+  subnet_ids         = module.ss_vpc.private_subnets
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+  vpc_id             = module.ss_vpc.vpc_id
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke1" {
+  subnet_ids         = module.spoke1_vpc.private_subnets
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+  vpc_id             = module.spoke1_vpc.vpc_id
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke2" {
+  subnet_ids         = module.spoke2_vpc.private_subnets
+  transit_gateway_id = module.tgw.ec2_transit_gateway_id
+  vpc_id             = module.spoke2_vpc.vpc_id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "ss" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.ss.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.ss.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "spoke1" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke1.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke1.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "spoke2" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke2.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke2.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "ss_to_spoke1" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke1.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.ss.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "ss_to_spoke2" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke2.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.ss.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "spoke1_to_ss" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.ss.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke1.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "spoke2_to_ss" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.ss.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke2.id
+}
+
 ################################################################################
 # Lambda Module
 ################################################################################
@@ -193,7 +318,7 @@ module "lambda_s3_write" {
   # See https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
 
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
-  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_subnet_ids         = module.spoke1_vpc.private_subnets
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1
@@ -204,13 +329,13 @@ module "security_group_lambda" {
   name        = random_pet.this.id
   description = "Security Group for Lambda Egress"
 
-  vpc_id = module.vpc.vpc_id
+  vpc_id = module.spoke1_vpc.vpc_id
 
-  egress_cidr_blocks      = []
+  #egress_cidr_blocks      = []
   egress_ipv6_cidr_blocks = []
 
   # Prefix list ids to use in all egress rules in this module
-  egress_prefix_list_ids = [module.vpc_endpoints.endpoints["s3"]["prefix_list_id"]]
+  #egress_prefix_list_ids = [module.ss_vpc_endpoints.endpoints["s3"]["prefix_list_id"]]
 
   egress_rules = ["https-443-tcp"]
 }
