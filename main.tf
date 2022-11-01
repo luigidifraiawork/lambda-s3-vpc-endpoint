@@ -47,8 +47,8 @@ module "ss_vpc" {
   name = "${random_pet.this.id}-ss"
   cidr = local.ss_vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.ss_vpc_cidr, 8, k)]
+  azs           = local.azs
+  intra_subnets = [for k, v in local.azs : cidrsubnet(local.ss_vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints
@@ -62,7 +62,7 @@ module "ss_vpc_endpoints" {
     s3 = {
       service         = "s3"
       service_type    = "Gateway"
-      route_table_ids = module.ss_vpc.private_route_table_ids
+      route_table_ids = module.ss_vpc.intra_route_table_ids
       policy          = data.aws_iam_policy_document.endpoint.json
     }
   }
@@ -173,8 +173,8 @@ module "spoke1_vpc" {
   name = "${random_pet.this.id}-spoke1"
   cidr = local.spoke1_vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.spoke1_vpc_cidr, 8, k)]
+  azs           = local.azs
+  intra_subnets = [for k, v in local.azs : cidrsubnet(local.spoke1_vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
@@ -185,8 +185,8 @@ module "spoke2_vpc" {
   name = "${random_pet.this.id}-spoke2"
   cidr = local.spoke2_vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.spoke2_vpc_cidr, 8, k)]
+  azs           = local.azs
+  intra_subnets = [for k, v in local.azs : cidrsubnet(local.spoke2_vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/transit-gateway/aws/2.8.0
@@ -203,21 +203,21 @@ module "tgw" {
 
 resource "aws_route" "ss_default" {
   count                  = var.az_count
-  route_table_id         = module.ss_vpc.private_route_table_ids[count.index]
+  route_table_id         = module.ss_vpc.intra_route_table_ids[count.index]
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = module.tgw.ec2_transit_gateway_id
 }
 
 resource "aws_route" "spoke1_default" {
   count                  = var.az_count
-  route_table_id         = module.spoke1_vpc.private_route_table_ids[count.index]
+  route_table_id         = module.spoke1_vpc.intra_route_table_ids[count.index]
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = module.tgw.ec2_transit_gateway_id
 }
 
 resource "aws_route" "spoke2_default" {
   count                  = var.az_count
-  route_table_id         = module.spoke2_vpc.private_route_table_ids[count.index]
+  route_table_id         = module.spoke2_vpc.intra_route_table_ids[count.index]
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = module.tgw.ec2_transit_gateway_id
 }
@@ -235,19 +235,19 @@ resource "aws_ec2_transit_gateway_route_table" "spoke2" {
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "ss" {
-  subnet_ids         = module.ss_vpc.private_subnets
+  subnet_ids         = module.ss_vpc.intra_subnets
   transit_gateway_id = module.tgw.ec2_transit_gateway_id
   vpc_id             = module.ss_vpc.vpc_id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke1" {
-  subnet_ids         = module.spoke1_vpc.private_subnets
+  subnet_ids         = module.spoke1_vpc.intra_subnets
   transit_gateway_id = module.tgw.ec2_transit_gateway_id
   vpc_id             = module.spoke1_vpc.vpc_id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke2" {
-  subnet_ids         = module.spoke2_vpc.private_subnets
+  subnet_ids         = module.spoke2_vpc.intra_subnets
   transit_gateway_id = module.tgw.ec2_transit_gateway_id
   vpc_id             = module.spoke2_vpc.vpc_id
 }
@@ -318,7 +318,7 @@ module "lambda_s3_write" {
   # See https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
 
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
-  vpc_subnet_ids         = module.spoke1_vpc.private_subnets
+  vpc_subnet_ids         = module.spoke1_vpc.intra_subnets
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1
