@@ -1,14 +1,20 @@
 locals {
-  tags = merge(
-    var.tags,
-    {
-      Terraform = "true"
-    }
-  )
+  network_acls = {
+    default_inbound = [
+      {
+        rule_number = 100
+        rule_action = "allow"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_block  = "10.0.0.0/16"
+      },
+    ]
+  }
 }
 
 provider "aws" {
-  region = var.region
+  region = "us-east-1"
 
   # Make it faster by skipping something
   skip_get_ec2_platforms      = true
@@ -16,10 +22,6 @@ provider "aws" {
   skip_region_validation      = true
   skip_credentials_validation = true
   skip_requesting_account_id  = true
-
-  default_tags {
-    tags = local.tags
-  }
 }
 
 data "aws_availability_zones" "available" {}
@@ -36,6 +38,16 @@ resource "random_pet" "this" {
   length = 2
 }
 
+# https://registry.terraform.io/modules/luigidifraiawork/nacl-rules-managed-prefix-list/aws/1.1.1
+module "s3_endpoint_inbound" {
+  source  = "luigidifraiawork/nacl-rules-managed-prefix-list/aws"
+  version = "~> 1.1"
+
+  service_name = "s3"
+  start_offset = 200
+  direction    = "inbound"
+}
+
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
@@ -44,8 +56,16 @@ module "vpc" {
   name = random_pet.this.id
   cidr = var.vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
+  azs           = local.azs
+  intra_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
+
+  intra_dedicated_network_acl = true
+  intra_inbound_acl_rules = concat(
+    # NACL rule for local traffic
+    local.network_acls["default_inbound"],
+    # NACL rules for the response traffic from addresses in the AWS S3 prefix list
+    module.s3_endpoint_inbound.rules
+  )
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints
@@ -59,7 +79,7 @@ module "vpc_endpoints" {
     s3 = {
       service         = "s3"
       service_type    = "Gateway"
-      route_table_ids = module.vpc.private_route_table_ids
+      route_table_ids = module.vpc.intra_route_table_ids
       policy          = data.aws_iam_policy_document.endpoint.json
     }
   }
@@ -193,7 +213,7 @@ module "lambda_s3_write" {
   # See https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
 
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
-  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_subnet_ids         = module.vpc.intra_subnets
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1

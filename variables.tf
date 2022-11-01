@@ -27,11 +27,3 @@ variable "az_count" {
     error_message = "The value of variable 'az_count' must be between 1 and 6."
   }
 }
-
-variable "tags" {
-  description = "Default tags to apply to all resources"
-  type        = map(string)
-  default = {
-    Environment = "sandbox"
-  }
-}
