@@ -44,8 +44,8 @@ module "vpc" {
   name = random_pet.this.id
   cidr = var.vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
+  azs           = local.azs
+  intra_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.16.0/submodules/vpc-endpoints
@@ -59,7 +59,7 @@ module "vpc_endpoints" {
     s3 = {
       service         = "s3"
       service_type    = "Gateway"
-      route_table_ids = module.vpc.private_route_table_ids
+      route_table_ids = module.vpc.intra_route_table_ids
       policy          = data.aws_iam_policy_document.endpoint.json
     }
   }
@@ -193,7 +193,7 @@ module "lambda_s3_write" {
   # See https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
 
   vpc_security_group_ids = [module.security_group_lambda.security_group_id]
-  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_subnet_ids         = module.vpc.intra_subnets
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/4.13.1
